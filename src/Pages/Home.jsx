@@ -6,7 +6,7 @@ const Home = () => {
   const inputRef = useRef(null);
   const [apiData, setApiData] = useState(null);
   const [showWeather, setShowWeather] = useState(null);
-
+  const [loading, setLoading] = useState(false);
   const WeatherTypes = [
     {
       type: "Clear",
@@ -44,6 +44,7 @@ const Home = () => {
 
   const fetchWeather = async () => {
     const URL = `https://api.openweathermap.org/data/2.5/weather?q=${inputRef.current.value}&units=metric&appid=${Api_key}`;
+    setLoading(true);
     fetch(URL)
       .then((res) => res.json())
       .then((data) => {
@@ -54,9 +55,11 @@ const Home = () => {
           )
         );
         setApiData(data);
+        setLoading(false);
       })
       .catch((err) => {
         console.log(err);
+        setLoading(false);
       });
   };
 
@@ -83,35 +86,45 @@ const Home = () => {
             showWeather ? "h-[30rem]" : "h-0"
           }`}
         >
-          <div className="text-center flex flex-col gap-6 mt-10">
-            {apiData && (
-              <p className="text-xl font-semibold">
-                {apiData?.name + "," + apiData?.sys?.country}
-              </p>
-            )}
-            {showWeather && showWeather.length > 0 && (
+          {loading ? (
+            <div className="grid place-items-center h-full">
               <img
-                src={showWeather[0]?.img}
+                src="https://cdn-icons-png.flaticon.com/512/1477/1477009.png"
                 alt="..."
-                className="w-52 mx-auto"
+                className="w-14 mx-auto mb-2 animate-spin"
               />
-            )}
-            {showWeather && (
-              <h3 className="text-2xl font-bold text-zinc-800">
-                {showWeather[0]?.type}
-              </h3>
-            )}
-            {apiData && (
-              <div className="flex flex-col items-center">
-                <h2 className="text-4xl font-extrabold">
-                  {apiData?.main?.temp + "°C"}
-                </h2>
-                <h3 className="text-xl font-bold text-zinc-800 mt-4">
-                  Humidity: {apiData?.main?.humidity}%
+            </div>
+          ) : (
+            <div className="text-center flex flex-col gap-6 mt-10">
+              {apiData && (
+                <p className="text-xl font-semibold">
+                  {apiData?.name + "," + apiData?.sys?.country}
+                </p>
+              )}
+              {showWeather && showWeather.length > 0 && (
+                <img
+                  src={showWeather[0]?.img}
+                  alt="..."
+                  className="w-52 mx-auto"
+                />
+              )}
+              {showWeather && (
+                <h3 className="text-2xl font-bold text-zinc-800">
+                  {showWeather[0]?.type}
                 </h3>
-              </div>
-            )}
-          </div>
+              )}
+              {apiData && (
+                <div className="flex flex-col items-center">
+                  <h2 className="text-4xl font-extrabold">
+                    {apiData?.main?.temp + "°C"}
+                  </h2>
+                  <h3 className="text-xl font-bold text-zinc-800 mt-4">
+                    Humidity: {apiData?.main?.humidity}%
+                  </h3>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
