@@ -48,14 +48,23 @@ const Home = () => {
     fetch(URL)
       .then((res) => res.json())
       .then((data) => {
-        setApiData(null);
-        setShowWeather(
-          WeatherTypes.filter(
-            (weather) => weather.type === data.weather[0].main
-          )
-        );
-        setApiData(data);
         setLoading(false);
+        if (data.cod === "404" || data.cod === "400") {
+          setShowWeather([
+            {
+              type: "Location Not Found",
+              img: "https://cdn-icons-png.flaticon.com/512/4275/4275497.png",
+            },
+          ]);
+          setApiData(null);
+        } else {
+          setShowWeather(
+            WeatherTypes.filter(
+              (weather) => weather.type === data.weather[0].main
+            )
+          );
+          setApiData(data);
+        }
       })
       .catch((err) => {
         console.log(err);
