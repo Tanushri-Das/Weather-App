@@ -6,6 +6,7 @@ const Home = () => {
   const inputRef = useRef(null);
   const [apiData, setApiData] = useState(null);
   const [showWeather, setShowWeather] = useState(null);
+  const [unit, setUnit] = useState("metric");
   const [loading, setLoading] = useState(false);
   const WeatherTypes = [
     {
@@ -63,6 +64,12 @@ const Home = () => {
               (weather) => weather.type === data.weather[0].main
             )
           );
+          let tempFahrenheit = data.main.temp;
+          if (unit === "imperial") {
+            tempFahrenheit = ((data.main.temp * 9) / 5 + 32).toFixed(2);
+          }
+          console.log("Temperature in Celsius:", data.main.temp + "°C");
+          console.log("Temperature in Fahrenheit:", tempFahrenheit + "°F");
           setApiData(data);
         }
       })
@@ -71,7 +78,26 @@ const Home = () => {
         setLoading(false);
       });
   };
-
+  const toggleUnit = () => {
+    const newUnit = unit === "metric" ? "imperial" : "metric";
+    setUnit(newUnit);
+    if (apiData) {
+      let temp = apiData.main.temp;
+      let updatedTemp;
+      if (newUnit === "imperial") {
+        updatedTemp = ((temp * 9) / 5 + 32).toFixed(2);
+      } else {
+        updatedTemp = (((temp - 32) * 5) / 9).toFixed(2); // Corrected line
+      }
+      setApiData({
+        ...apiData,
+        main: {
+          ...apiData.main,
+          temp: updatedTemp,
+        },
+      });
+    }
+  };
   return (
     <div className="h-screen grid place-items-center">
       <div className="bg-white w-96 p-4 rounded-md">
@@ -104,35 +130,44 @@ const Home = () => {
               />
             </div>
           ) : (
-            <div className="text-center flex flex-col gap-6 mt-10">
-              {apiData && (
-                <p className="text-xl font-semibold">
-                  {apiData?.name + "," + apiData?.sys?.country}
-                </p>
-              )}
-              {showWeather && showWeather.length > 0 && (
+            showWeather && (
+              <div className="text-center flex flex-col gap-6 mt-10">
+                {apiData && (
+                  <p className="text-xl font-semibold">
+                    {apiData?.name + "," + apiData?.sys?.country}
+                  </p>
+                )}
                 <img
                   src={showWeather[0]?.img}
                   alt="..."
                   className="w-52 mx-auto"
                 />
-              )}
-              {showWeather && (
                 <h3 className="text-2xl font-bold text-zinc-800">
                   {showWeather[0]?.type}
                 </h3>
-              )}
-              {apiData && (
-                <div className="flex flex-col items-center">
-                  <h2 className="text-4xl font-extrabold">
-                    {apiData?.main?.temp + "°C"}
-                  </h2>
-                  <h3 className="text-xl font-bold text-zinc-800 mt-4">
-                    Humidity: {apiData?.main?.humidity}%
-                  </h3>
-                </div>
-              )}
-            </div>
+
+                {apiData && (
+                  <div className="flex flex-col items-center">
+                    <div className="flex justify-center items-center">
+                      <h2 className="text-4xl font-extrabold">
+                        {unit === "metric"
+                          ? apiData?.main?.temp + "°C"
+                          : apiData?.main?.temp + "°F"}
+                      </h2>
+                      <button
+                        onClick={toggleUnit}
+                        className="text-blue-500 font-semibold ml-4"
+                      >
+                        Toggle Unit
+                      </button>
+                    </div>
+                    <h3 className="text-xl font-bold text-zinc-800 mt-4">
+                      Humidity: {apiData?.main?.humidity}%
+                    </h3>
+                  </div>
+                )}
+              </div>
+            )
           )}
         </div>
       </div>
