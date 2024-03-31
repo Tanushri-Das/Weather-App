@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 
 const Api_key = "283f90719ecc2d0dd3cb316eb553a072";
 
@@ -8,6 +8,7 @@ const Home = () => {
   const [showWeather, setShowWeather] = useState(null);
   const [unit, setUnit] = useState("metric");
   const [loading, setLoading] = useState(false);
+  const [forecastData, setForecastData] = useState([]);
   const WeatherTypes = [
     {
       type: "Clear",
@@ -43,8 +44,14 @@ const Home = () => {
     },
   ];
 
+  useEffect(() => {
+    if (apiData) {
+      fetchForecastData();
+    }
+  }, [apiData]);
+
   const fetchWeather = async () => {
-    const URL = `https://api.openweathermap.org/data/2.5/weather?q=${inputRef.current.value}&units=metric&appid=${Api_key}`;
+    const URL = `https://api.openweathermap.org/data/2.5/weather?q=${inputRef.current.value}&units=${unit}&appid=${Api_key}`;
     setLoading(true);
     fetch(URL)
       .then((res) => res.json())
@@ -64,12 +71,6 @@ const Home = () => {
               (weather) => weather.type === data.weather[0].main
             )
           );
-          let tempFahrenheit = data.main.temp;
-          if (unit === "imperial") {
-            tempFahrenheit = ((data.main.temp * 9) / 5 + 32).toFixed(2);
-          }
-          console.log("Temperature in Celsius:", data.main.temp + "°C");
-          console.log("Temperature in Fahrenheit:", tempFahrenheit + "°F");
           setApiData(data);
         }
       })
@@ -78,6 +79,25 @@ const Home = () => {
         setLoading(false);
       });
   };
+
+  const fetchForecastData = async () => {
+    const URL = `https://api.openweathermap.org/data/2.5/forecast?q=${inputRef.current.value}&units=${unit}&appid=${Api_key}`;
+    fetch(URL)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.cod === "200") {
+          // Filter forecast data for next 5 days
+          const filteredForecastData = data.list.filter(
+            (item, index) => index % 8 === 0 && index < 40
+          );
+          setForecastData(filteredForecastData);
+        }
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
+
   const toggleUnit = () => {
     const newUnit = unit === "metric" ? "imperial" : "metric";
     setUnit(newUnit);
@@ -87,7 +107,7 @@ const Home = () => {
       if (newUnit === "imperial") {
         updatedTemp = ((temp * 9) / 5 + 32).toFixed(2);
       } else {
-        updatedTemp = (((temp - 32) * 5) / 9).toFixed(2); // Corrected line
+        updatedTemp = (((temp - 32) * 5) / 9).toFixed(2);
       }
       setApiData({
         ...apiData,
@@ -98,6 +118,7 @@ const Home = () => {
       });
     }
   };
+
   return (
     <div className="h-screen grid place-items-center">
       <div className="bg-white w-96 p-4 rounded-md">
@@ -169,6 +190,31 @@ const Home = () => {
               </div>
             )
           )}
+        </div>
+        <div className="mt-8">
+          <h2 className="text-lg font-semibold mb-2">5-Day Forecast</h2>
+          <div className="grid grid-cols-1 gap-4">
+            {forecastData.map((item, index) => (
+              <div key={index} className="text-center">
+                <p>{new Date(item.dt * 1000).toLocaleDateString()}</p>
+                <img
+                  src={
+                    WeatherTypes.find(
+                      (weather) => weather.type === item.weather[0].main
+                    )?.img
+                  }
+                  alt="..."
+                  className="w-12 mx-auto"
+                />
+                <p>
+                  Temperature: {item.main.temp}&deg;
+                  {unit === "metric" ? "C" : "F"}
+                </p>
+                <p>Humidity: {item.main.humidity}%</p>
+                <p>Weather Type: {item.weather[0].main}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
