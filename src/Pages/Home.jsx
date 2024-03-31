@@ -45,43 +45,78 @@ const Home = () => {
   ];
 
   useEffect(() => {
-    if (apiData) {
-      fetchForecastData();
-    }
-  }, [apiData]);
+    // Fetch weather data for the user's current location when the component mounts
+    fetchWeather();
+  }, []);
 
   const fetchWeather = async () => {
-    const URL = `https://api.openweathermap.org/data/2.5/weather?q=${inputRef.current.value}&units=${unit}&appid=${Api_key}`;
-    setLoading(true);
-    fetch(URL)
-      .then((res) => res.json())
-      .then((data) => {
-        setLoading(false);
-        if (data.cod === "404" || data.cod === "400") {
-          setShowWeather([
-            {
-              type: "Location Not Found",
-              img: "https://cdn-icons-png.flaticon.com/512/4275/4275497.png",
-            },
-          ]);
-          setApiData(null);
-        } else {
-          setShowWeather(
-            WeatherTypes.filter(
-              (weather) => weather.type === data.weather[0].main
-            )
-          );
-          setApiData(data);
+    if (inputRef.current.value) {
+      // If the user has provided a location, fetch weather data for that location
+      const URL = `https://api.openweathermap.org/data/2.5/weather?q=${inputRef.current.value}&units=${unit}&appid=${Api_key}`;
+      setLoading(true);
+      fetch(URL)
+        .then((res) => res.json())
+        .then((data) => {
+          setLoading(false);
+          if (data.cod === "404" || data.cod === "400") {
+            setShowWeather([
+              {
+                type: "Location Not Found",
+                img: "https://cdn-icons-png.flaticon.com/512/4275/4275497.png",
+              },
+            ]);
+            setApiData(null);
+          } else {
+            setShowWeather(
+              WeatherTypes.filter(
+                (weather) => weather.type === data.weather[0].main
+              )
+            );
+            setApiData(data);
+            // Fetch 5-day forecast data after fetching main weather data
+            fetchForecastData(data.coord.lat, data.coord.lon);
+          }
+        })
+        .catch((err) => {
+          console.log(err);
+          setLoading(false);
+        });
+    } else {
+      // If the user has not provided a location, use geolocation to fetch weather data for their current location
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const latitude = position.coords.latitude;
+          const longitude = position.coords.longitude;
+          const URL = `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&units=${unit}&appid=${Api_key}`;
+          setLoading(true);
+          fetch(URL)
+            .then((res) => res.json())
+            .then((data) => {
+              setLoading(false);
+              setShowWeather(
+                WeatherTypes.filter(
+                  (weather) => weather.type === data.weather[0].main
+                )
+              );
+              setApiData(data);
+              // Fetch 5-day forecast data after fetching main weather data
+              fetchForecastData(latitude, longitude);
+            })
+            .catch((err) => {
+              console.log(err);
+              setLoading(false);
+            });
+        },
+        (error) => {
+          console.log(error);
+          setLoading(false);
         }
-      })
-      .catch((err) => {
-        console.log(err);
-        setLoading(false);
-      });
+      );
+    }
   };
 
-  const fetchForecastData = async () => {
-    const URL = `https://api.openweathermap.org/data/2.5/forecast?q=${inputRef.current.value}&units=${unit}&appid=${Api_key}`;
+  const fetchForecastData = async (latitude, longitude) => {
+    const URL = `https://api.openweathermap.org/data/2.5/forecast?lat=${latitude}&lon=${longitude}&units=${unit}&appid=${Api_key}`;
     fetch(URL)
       .then((res) => res.json())
       .then((data) => {
@@ -90,7 +125,18 @@ const Home = () => {
           const filteredForecastData = data.list.filter(
             (item, index) => index % 8 === 0 && index < 40
           );
-          setForecastData(filteredForecastData);
+          // Convert temperature values to the selected unit
+          const convertedForecastData = filteredForecastData.map((item) => ({
+            ...item,
+            main: {
+              ...item.main,
+              temp:
+                unit === "metric"
+                  ? item.main.temp
+                  : (item.main.temp * 9) / 5 + 32,
+            },
+          }));
+          setForecastData(convertedForecastData);
         }
       })
       .catch((err) => {
@@ -102,12 +148,11 @@ const Home = () => {
     const newUnit = unit === "metric" ? "imperial" : "metric";
     setUnit(newUnit);
     if (apiData) {
-      let temp = apiData.main.temp;
       let updatedTemp;
       if (newUnit === "imperial") {
-        updatedTemp = ((temp * 9) / 5 + 32).toFixed(2);
+        updatedTemp = (apiData.main.temp * 9) / 5 + 32;
       } else {
-        updatedTemp = (((temp - 32) * 5) / 9).toFixed(2);
+        updatedTemp = ((apiData.main.temp - 32) * 5) / 9;
       }
       setApiData({
         ...apiData,
@@ -117,6 +162,16 @@ const Home = () => {
         },
       });
     }
+    // Convert forecast data to the selected unit
+    const convertedForecastData = forecastData.map((item) => ({
+      ...item,
+      main: {
+        ...item.main,
+        temp:
+          newUnit === "metric" ? item.main.temp : (item.main.temp * 9) / 5 + 32,
+      },
+    }));
+    setForecastData(convertedForecastData);
   };
 
   return (
@@ -172,8 +227,8 @@ const Home = () => {
                     <div className="flex justify-center items-center">
                       <h2 className="text-4xl font-extrabold">
                         {unit === "metric"
-                          ? apiData?.main?.temp + "°C"
-                          : apiData?.main?.temp + "°F"}
+                          ? apiData?.main?.temp.toFixed(2) + "°C"
+                          : apiData?.main?.temp.toFixed(2) + "°F"}
                       </h2>
                       <button
                         onClick={toggleUnit}
@@ -207,7 +262,7 @@ const Home = () => {
                   className="w-12 mx-auto"
                 />
                 <p>
-                  Temperature: {item.main.temp}&deg;
+                  Temperature: {item.main.temp.toFixed(2)}&deg;
                   {unit === "metric" ? "C" : "F"}
                 </p>
                 <p>Humidity: {item.main.humidity}%</p>
