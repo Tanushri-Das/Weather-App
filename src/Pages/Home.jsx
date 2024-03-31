@@ -45,7 +45,20 @@ const Home = () => {
   ];
 
   useEffect(() => {
-    // Fetch weather data for the user's current location when the component mounts
+    const cachedData = localStorage.getItem("weatherData");
+    if (cachedData) {
+      const { apiData, forecastData, showWeather, timestamp } =
+        JSON.parse(cachedData);
+      const now = new Date().getTime();
+      // If the cached data is not expired (less than 1 hour old)
+      if (now - timestamp < 3600000) {
+        setApiData(apiData);
+        setForecastData(forecastData);
+        setShowWeather(showWeather);
+        return;
+      }
+    }
+    // If no cached data or expired, fetch new weather data
     fetchWeather();
   }, []);
 
@@ -173,6 +186,21 @@ const Home = () => {
     }));
     setForecastData(convertedForecastData);
   };
+
+  useEffect(() => {
+    // Update localStorage when apiData or forecastData changes
+    if (apiData && forecastData && showWeather) {
+      localStorage.setItem(
+        "weatherData",
+        JSON.stringify({
+          apiData,
+          forecastData,
+          showWeather,
+          timestamp: new Date().getTime(),
+        })
+      );
+    }
+  }, [apiData, forecastData, showWeather]);
 
   return (
     <div className="h-screen grid place-items-center">
