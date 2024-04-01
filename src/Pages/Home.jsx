@@ -1,6 +1,8 @@
 import React, { useRef, useState, useEffect } from "react";
 import { FaSearch } from "react-icons/fa";
 import { useTransition, animated } from "react-spring";
+import WeatherCard from "../Components/WeatherCard/WeatherCard";
+import ForecastCard from "../Components/ForecastCard/ForecastCard";
 
 const Api_key = "283f90719ecc2d0dd3cb316eb553a072";
 
@@ -261,38 +263,12 @@ const Home = () => {
                     style={style}
                     className="text-center flex flex-col gap-6 mt-8"
                   >
-                    {apiData && (
-                      <h3 className="text-3xl text-white font-extrabold">
-                        {apiData?.name + " , " + apiData?.sys?.country}
-                      </h3>
-                    )}
-                    <img
-                      src={showWeather[0]?.img}
-                      alt="..."
-                      className="w-20 mx-auto -mt-2 -mb-4"
+                    <WeatherCard
+                      apiData={apiData}
+                      showWeather={showWeather}
+                      unit={unit}
+                      toggleUnit={toggleUnit}
                     />
-                    <h3 className="text-2xl font-bold text-white">
-                      {showWeather[0]?.type}
-                    </h3>
-
-                    {apiData && (
-                      <div className="flex flex-col items-center">
-                        <h2 className="text-2xl font-extrabold text-white mb-4">
-                          {unit === "metric"
-                            ? apiData?.main?.temp.toFixed(2) + "°C"
-                            : apiData?.main?.temp.toFixed(2) + "°F"}
-                        </h2>
-                        <button
-                          onClick={toggleUnit}
-                          className="text-white text-lg border-2 border-white px-6 py-3 rounded-full font-semibold "
-                        >
-                          Toggle Unit
-                        </button>
-                        <h3 className="text-xl font-bold text-white mt-4">
-                          Humidity: {apiData?.main?.humidity}%
-                        </h3>
-                      </div>
-                    )}
                   </animated.div>
                 )
             )
@@ -313,28 +289,11 @@ const Home = () => {
                         key={item.dt}
                         className="text-center"
                       >
-                        <h3 className="text-xl font-bold text-white">
-                          {new Date(item.dt * 1000).toLocaleDateString()}
-                        </h3>
-                        <img
-                          src={
-                            WeatherTypes.find(
-                              (weather) => weather.type === item.weather[0].main
-                            )?.img
-                          }
-                          alt="..."
-                          className="w-14 mx-auto my-2"
+                        <ForecastCard
+                          item={item}
+                          unit={unit}
+                          WeatherTypes={WeatherTypes}
                         />
-                        <p className="text-[16px] font-semibold text-white">
-                          Temperature : {item.main.temp.toFixed(2)}&deg;
-                          {unit === "metric" ? "C" : "F"}
-                        </p>
-                        <p className="text-[16px] font-semibold text-white mb-1">
-                          Humidity : {item.main.humidity}%
-                        </p>
-                        <p className="text-[16px] font-semibold text-white mb-1">
-                          Weather Type : {item.weather[0].main}
-                        </p>
                       </animated.div>
                     )
                 )}
