@@ -4,7 +4,7 @@ import { useTransition, animated } from "react-spring";
 import WeatherCard from "../Components/WeatherCard/WeatherCard";
 import ForecastCard from "../Components/ForecastCard/ForecastCard";
 
-const Api_key = "283f90719ecc2d0dd3cb316eb553a072";
+const Api_key = import.meta.env.VITE_apiKey;
 
 const Home = () => {
   const inputRef = useRef(null);
