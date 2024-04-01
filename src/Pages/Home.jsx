@@ -48,7 +48,6 @@ const Home = () => {
     },
   ];
 
-  // Animation transitions for weather data
   const weatherTransition = useTransition(showWeather, {
     from: { opacity: 0, transform: "translateY(-20px)" },
     enter: { opacity: 1, transform: "translateY(0px)" },
@@ -56,7 +55,6 @@ const Home = () => {
     config: { duration: 500 },
   });
 
-  // Animation transitions for forecast data
   const forecastTransitions = useTransition(forecastData, {
     from: { opacity: 0, transform: "translateY(-20px)" },
     enter: { opacity: 1, transform: "translateY(0px)" },
@@ -78,13 +76,11 @@ const Home = () => {
         return;
       }
     }
-    // If no cached data or expired, fetch new weather data
     fetchWeather();
   }, []);
 
   const fetchWeather = async () => {
     if (inputRef.current.value) {
-      // If the user has provided a location, fetch weather data for that location
       const URL = `https://api.openweathermap.org/data/2.5/weather?q=${inputRef.current.value}&units=${unit}&appid=${Api_key}`;
       setLoading(true);
       fetch(URL)
@@ -99,7 +95,6 @@ const Home = () => {
               },
             ]);
             setApiData(null);
-            // Clear forecast data
             setForecastData([]);
           } else {
             setShowWeather(
@@ -108,7 +103,6 @@ const Home = () => {
               )
             );
             setApiData(data);
-            // Fetch 5-day forecast data after fetching main weather data
             fetchForecastData(data.coord.lat, data.coord.lon);
           }
         })
@@ -117,7 +111,6 @@ const Home = () => {
           setLoading(false);
         });
     } else {
-      // If the user has not provided a location, use geolocation to fetch weather data for their current location
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const latitude = position.coords.latitude;
@@ -134,7 +127,6 @@ const Home = () => {
                 )
               );
               setApiData(data);
-              // Fetch 5-day forecast data after fetching main weather data
               fetchForecastData(latitude, longitude);
             })
             .catch((err) => {
@@ -156,11 +148,9 @@ const Home = () => {
       .then((res) => res.json())
       .then((data) => {
         if (data.cod === "200") {
-          // Filter forecast data for next 5 days
           const filteredForecastData = data.list.filter(
             (item, index) => index % 8 === 0 && index < 40
           );
-          // Convert temperature values to the selected unit
           const convertedForecastData = filteredForecastData.map((item) => ({
             ...item,
             main: {
@@ -197,7 +187,6 @@ const Home = () => {
         },
       });
     }
-    // Convert forecast data to the selected unit
     const convertedForecastData = forecastData.map((item) => ({
       ...item,
       main: {
@@ -212,7 +201,6 @@ const Home = () => {
   };
 
   useEffect(() => {
-    // Update localStorage when apiData or forecastData changes
     if (apiData && forecastData && showWeather) {
       localStorage.setItem(
         "weatherData",
